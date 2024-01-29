@@ -21,11 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-//import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.border
-//import androidx.compose.material3.MaterialTheme
 import android.content.res.Configuration
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,15 +34,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.ui.Alignment
 
-
+private const val HOME_ROUTE = "Home"
+private const val SETTINGS_ROUTE = "Settings"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTutorialTheme {
-                Conversation(SampleData.conversationSample)
+                Navigation()
             }
         }
     }
@@ -52,6 +62,64 @@ class MainActivity : ComponentActivity() {
 
 
 data class Message(val author: String, val body: String)
+
+@Composable
+fun Navigation() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = HOME_ROUTE) {
+        composable(route = HOME_ROUTE) { Home(navController) }
+        composable(route = SETTINGS_ROUTE) { Settings(navController) }
+    }
+}
+
+@Composable
+fun Home(navController: NavController) {
+    Column {
+        IconButton(
+            onClick = { navController.navigate("Settings") },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Icon(
+                Icons.Rounded.Settings, contentDescription = "Settings",
+            )
+        }
+        Conversation(SampleData.conversationSample)
+    }
+}
+
+
+@Composable
+fun Settings(navController: NavController) {
+    var text by remember { mutableStateOf("Lexi") }
+    Column {
+        IconButton(
+            onClick = {
+                navController.navigate("Home") {
+                    popUpTo("Home") {
+                        inclusive = true
+                    }
+                }
+            },
+            modifier = Modifier.align(Alignment.Start)
+        ) {
+            Icon(
+                Icons.Rounded.ArrowBack, contentDescription = "ArrowBack",
+            )
+        }
+        Text(text = "User:")
+        Image(
+            painter = painterResource(R.drawable.profile_picture),
+            contentDescription = "Contact profile picture",
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+        )
+        TextField(value = text, onValueChange = { text = it })
+    }
+}
+
+
 
 @Composable
 fun MessageCard(msg: Message) {
@@ -66,15 +134,13 @@ fun MessageCard(msg: Message) {
         )
         Spacer(modifier = Modifier.width(8.dp))
 
-        // We keep track if the message is expanded or not in this
-        // variable
+
         var isExpanded by remember { mutableStateOf(false) }
-        // surfaceColor will be updated gradually from one color to the other
+
         val surfaceColor by animateColorAsState(
             if (isExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         )
 
-        // We toggle the isExpanded variable when we click on this Column
         Column(modifier = Modifier.clickable { isExpanded = !isExpanded }) {
             Text(
                 text = msg.author,
@@ -87,16 +153,15 @@ fun MessageCard(msg: Message) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 shadowElevation = 1.dp,
-                // surfaceColor color will be changing gradually from primary to surface
+
                 color = surfaceColor,
-                // animateContentSize will change the Surface size gradually
+
                 modifier = Modifier.animateContentSize().padding(1.dp)
             ) {
                 Text(
                     text = msg.body,
                     modifier = Modifier.padding(all = 4.dp),
-                    // If the message is expanded, we display all its content
-                    // otherwise we only display the first line
+
                     maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -131,7 +196,7 @@ fun PreviewMessageCard() {
     }
 }
 
-@Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true, name = "Dark Mode")
 @Composable
 fun PreviewConversation() {
     ComposeTutorialTheme {
